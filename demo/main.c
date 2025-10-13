@@ -96,11 +96,12 @@ static void test_window(mu_Context *ctx) {
     if (mu_header_ex(ctx, "Background Color", MU_OPT_EXPANDED)) {
       mu_layout_row(ctx, 2, (int[]) { -78, -1 }, 74);
       /* sliders */
+      static int idx = 0;
       mu_layout_begin_column(ctx);
       mu_layout_row(ctx, 2, (int[]) { 46, -1 }, 0);
-      mu_label(ctx, "Red:");   mu_slider(ctx, &bg[0], 0, 255);
-      mu_label(ctx, "Green:"); mu_slider(ctx, &bg[1], 0, 255);
-      mu_label(ctx, "Blue:");  mu_slider(ctx, &bg[2], 0, 255);
+      mu_label(ctx, "Red:");   mu_slider(ctx, &bg[0], &idx, 0, 255);
+      mu_label(ctx, "Green:"); mu_slider(ctx, &bg[1], &idx, 0, 255);
+      mu_label(ctx, "Blue:");  mu_slider(ctx, &bg[2], &idx, 0, 255);
       mu_layout_end_column(ctx);
       /* color preview */
       mu_Rect r = mu_layout_next(ctx);
@@ -131,9 +132,10 @@ static void log_window(mu_Context *ctx) {
 
     /* input textbox + submit button */
     static char buf[128];
+    static int idx = 0;
     int submitted = 0;
     mu_layout_row(ctx, 2, (int[]) { -70, -1 }, 0);
-    if (mu_textbox(ctx, buf, sizeof(buf)) & MU_RES_SUBMIT) {
+    if (mu_textbox(ctx, buf, sizeof(buf), &idx) & MU_RES_SUBMIT) {
       mu_set_focus(ctx, ctx->last_id);
       submitted = 1;
     }
@@ -150,9 +152,10 @@ static void log_window(mu_Context *ctx) {
 
 static int uint8_slider(mu_Context *ctx, unsigned char *value, int low, int high) {
   static float tmp;
+  static int idx = 0;
   mu_push_id(ctx, &value, sizeof(value));
   tmp = *value;
-  int res = mu_slider_ex(ctx, &tmp, low, high, 0, "%.0f", MU_OPT_ALIGNCENTER);
+  int res = mu_slider_ex(ctx, &tmp, &idx, low, high, 0, "%.0f", MU_OPT_ALIGNCENTER);
   *value = tmp;
   mu_pop_id(ctx);
   return res;
@@ -219,6 +222,8 @@ static const char key_map[256] = {
   [ SDLK_RALT         & 0xff ] = MU_KEY_ALT,
   [ SDLK_RETURN       & 0xff ] = MU_KEY_RETURN,
   [ SDLK_BACKSPACE    & 0xff ] = MU_KEY_BACKSPACE,
+  [ SDLK_LEFT         & 0xff ] = MU_KEY_LEFT,
+  [ SDLK_RIGHT        & 0xff ] = MU_KEY_RIGHT,
 };
 
 

@@ -182,6 +182,7 @@ void mu_end(mu_Context *ctx) {
   /* reset input state */
   ctx->key_pressed = 0;
   ctx->input_text[0] = '\0';
+  ctx->input_text_written = 0;
   ctx->mouse_pressed = 0;
   ctx->scroll_delta = mu_vec2(0, 0);
   ctx->last_mouse_pos = ctx->mouse_pos;
@@ -417,6 +418,7 @@ void mu_input_text(mu_Context *ctx, const char *text) {
   int size = strlen(text) + 1;
   expect(len + size <= (int) sizeof(ctx->input_text));
   memcpy(ctx->input_text + len, text, size);
+  ctx->input_text_written += (size-1);
 }
 
 
@@ -769,7 +771,7 @@ int mu_checkbox(mu_Context *ctx, const char *label, int *state) {
 }
 
 
-int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, mu_Id id, mu_Rect r,
+int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, int *index, mu_Id id, mu_Rect r,
   int opt)
 {
   int res = 0;
@@ -779,8 +781,13 @@ int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, mu_Id id, mu_Rect r,
     /* handle text input */
     int len = strlen(buf);
     int n = mu_min(bufsz - len - 1, (int) strlen(ctx->input_text));
+    int i = *index;
+    int needMove = len - i;
     if (n > 0) {
-      memcpy(buf + len, ctx->input_text, n);
+      if (needMove > 0) {
+        memmove(buf + i + n, buf + i, needMove);
+      }
+      memcpy(buf + i, ctx->input_text, n);
       len += n;
       buf[len] = '\0';
       res |= MU_RES_CHANGE;
@@ -789,6 +796,9 @@ int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, mu_Id id, mu_Rect r,
     if (ctx->key_pressed & MU_KEY_BACKSPACE && len > 0) {
       /* skip utf-8 continuation bytes */
       while ((buf[--len] & 0xc0) == 0x80 && len > 0);
+      
+      (*index)--;
+      memmove(buf + (*index), buf + (*index) + 1, len - (*index) + 1);
       buf[len] = '\0';
       res |= MU_RES_CHANGE;
     }
@@ -797,6 +807,19 @@ int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, mu_Id id, mu_Rect r,
       mu_set_focus(ctx, 0);
       res |= MU_RES_SUBMIT;
     }
+    if (ctx->key_pressed & MU_KEY_LEFT)
+    {
+      (*index)--;
+    }
+    else if (ctx->key_pressed & MU_KEY_RIGHT)
+    {
+      (*index)++;
+    }
+    if ((*index) < 0) (*index) = 0;
+    if (*index >= len) (*index) = len;
+  } else {
+    int len = strlen(buf);
+    (*index) = len;
   }
 
   /* draw */
@@ -804,7 +827,7 @@ int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, mu_Id id, mu_Rect r,
   if (ctx->focus == id) {
     mu_Color color = ctx->style->colors[MU_COLOR_TEXT];
     mu_Font font = ctx->style->font;
-    int textw = ctx->text_width(font, buf, -1);
+    int textw = ctx->text_width(font, buf, (*index));
     int texth = ctx->text_height(font);
     int ofx = r.w - ctx->style->padding - textw - 1;
     int textx = r.x + mu_min(ofx, ctx->style->padding);
@@ -816,12 +839,13 @@ int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, mu_Id id, mu_Rect r,
   } else {
     mu_draw_control_text(ctx, buf, r, MU_COLOR_TEXT, opt);
   }
-
+  
+  (*index)+=ctx->input_text_written;
   return res;
 }
 
 
-static int number_textbox(mu_Context *ctx, mu_Real *value, mu_Rect r, mu_Id id) {
+static int number_textbox(mu_Context *ctx, mu_Real *value, int *index, mu_Rect r, mu_Id id) {
   if (ctx->mouse_pressed == MU_MOUSE_LEFT && ctx->key_down & MU_KEY_SHIFT &&
       ctx->hover == id
   ) {
@@ -830,7 +854,7 @@ static int number_textbox(mu_Context *ctx, mu_Real *value, mu_Rect r, mu_Id id) 
   }
   if (ctx->number_edit == id) {
     int res = mu_textbox_raw(
-      ctx, ctx->number_edit_buf, sizeof(ctx->number_edit_buf), id, r, 0);
+      ctx, ctx->number_edit_buf, sizeof(ctx->number_edit_buf), index, id, r, 0);
     if (res & MU_RES_SUBMIT || ctx->focus != id) {
       *value = strtod(ctx->number_edit_buf, NULL);
       ctx->number_edit = 0;
@@ -842,14 +866,14 @@ static int number_textbox(mu_Context *ctx, mu_Real *value, mu_Rect r, mu_Id id) 
 }
 
 
-int mu_textbox_ex(mu_Context *ctx, char *buf, int bufsz, int opt) {
+int mu_textbox_ex(mu_Context *ctx, char *buf, int bufsz, int *index, int opt) {
   mu_Id id = mu_get_id(ctx, &buf, sizeof(buf));
   mu_Rect r = mu_layout_next(ctx);
-  return mu_textbox_raw(ctx, buf, bufsz, id, r, opt);
+  return mu_textbox_raw(ctx, buf, bufsz, index, id, r, opt);
 }
 
 
-int mu_slider_ex(mu_Context *ctx, mu_Real *value, mu_Real low, mu_Real high,
+int mu_slider_ex(mu_Context *ctx, mu_Real *value, int *index, mu_Real low, mu_Real high,
   mu_Real step, const char *fmt, int opt)
 {
   char buf[MU_MAX_FMT + 1];
@@ -860,7 +884,7 @@ int mu_slider_ex(mu_Context *ctx, mu_Real *value, mu_Real low, mu_Real high,
   mu_Rect base = mu_layout_next(ctx);
 
   /* handle text input mode */
-  if (number_textbox(ctx, &v, base, id)) { return res; }
+  if (number_textbox(ctx, &v, index, base, id)) { return res; }
 
   /* handle normal mode */
   mu_update_control(ctx, id, base, opt);
@@ -891,7 +915,7 @@ int mu_slider_ex(mu_Context *ctx, mu_Real *value, mu_Real low, mu_Real high,
 }
 
 
-int mu_number_ex(mu_Context *ctx, mu_Real *value, mu_Real step,
+int mu_number_ex(mu_Context *ctx, mu_Real *value, int *index, mu_Real step,
   const char *fmt, int opt)
 {
   char buf[MU_MAX_FMT + 1];
@@ -901,7 +925,7 @@ int mu_number_ex(mu_Context *ctx, mu_Real *value, mu_Real step,
   mu_Real last = *value;
 
   /* handle text input mode */
-  if (number_textbox(ctx, value, base, id)) { return res; }
+  if (number_textbox(ctx, value, index, base, id)) { return res; }
 
   /* handle normal mode */
   mu_update_control(ctx, id, base, opt);
