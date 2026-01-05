@@ -427,8 +427,7 @@ void mu_input_text(mu_Context *ctx, const char *text) {
 mu_Command* mu_push_command(mu_Context *ctx, int type, int size) {
   mu_Command *cmd = (mu_Command*) (ctx->command_list.items + ctx->command_list.idx);
   /* Align size to pointer boundary to prevent misaligned access */
-  const int alignment = sizeof(void*) - 1;
-  size = (size + alignment) & ~alignment;
+  size = (size + (sizeof(void*) - 1)) & ~(sizeof(void*) - 1);
   expect(ctx->command_list.idx + size < MU_COMMANDLIST_SIZE);
   cmd->base.type = type;
   cmd->base.size = size;
@@ -444,7 +443,7 @@ int mu_next_command(mu_Context *ctx, mu_Command **cmd) {
     *cmd = (mu_Command*) ctx->command_list.items;
   }
   while ((char*) *cmd != ctx->command_list.items + ctx->command_list.idx) {
-    if ((*cmd)->type != MU_COMMAND_JUMP) { return 1; }
+    if ((*cmd)->base.type != MU_COMMAND_JUMP) { return 1; }
     *cmd = (*cmd)->jump.dst;
   }
   return 0;
