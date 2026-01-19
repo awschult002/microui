@@ -1,5 +1,7 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <threads.h>
+#include <time.h>
 #include "renderer.h"
 #include "microui.h"
 
@@ -7,6 +9,8 @@
 static  char logbuf[64000];
 static   int logbuf_updated = 0;
 static float bg[3] = { 90, 95, 100 };
+unsigned long long fps_diff = 16666667;
+int fps_lock = 0;
 
 
 static void write_log(const char *text) {
@@ -23,6 +27,12 @@ static void test_window(mu_Context *ctx) {
     win->rect.w = mu_max(win->rect.w, 240);
     win->rect.h = mu_max(win->rect.h, 300);
 
+    char fps_s[20]="";
+    static float fps_lp = 60.0;
+    fps_lp = 0.99*fps_lp + 0.01*1e9/fps_diff; //low pass
+    sprintf(fps_s,"FPS: %.0f", fps_lp);
+    mu_label(ctx,fps_s);
+    mu_checkbox(ctx, "lock", &fps_lock);
     /* window info */
     if (mu_header(ctx, "Window Info")) {
       mu_Container *win = mu_get_current_container(ctx);
@@ -251,6 +261,8 @@ int main(int argc, char **argv) {
   /* main loop */
   for (;;) {
     /* handle SDL events */
+    struct timespec t_start;
+    timespec_get(&t_start, TIME_UTC);
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       switch (e.type) {
@@ -292,6 +304,16 @@ int main(int argc, char **argv) {
       }
     }
     r_present();
+
+    struct timespec t_end;
+    timespec_get(&t_end, TIME_UTC);
+    fps_diff = t_end.tv_nsec - t_start.tv_nsec;
+    if(fps_lock)
+    {
+        t_end.tv_nsec = 16666667 - fps_diff; //lock to 60 fps
+        thrd_sleep(&t_end, NULL);
+        timespec_get(&t_end, TIME_UTC); // get time again for proper FPS count
+    }
   }
 
   return 0;
