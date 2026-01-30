@@ -19,12 +19,12 @@ else
 	endif
 endif
 
-run:
-	exec ./$(TARGET)
-
 
 $(TARGET):
 	$(CC) $(SRC) $(CFLAGS) -o $@ $(LIBS)
+
+run:
+	exec ./$(TARGET)
 
 
 .PHONY: clean run
