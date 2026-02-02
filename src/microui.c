@@ -145,6 +145,7 @@ void mu_begin(mu_Context *ctx) {
   ctx->mouse_delta.x = ctx->mouse_pos.x - ctx->last_mouse_pos.x;
   ctx->mouse_delta.y = ctx->mouse_pos.y - ctx->last_mouse_pos.y;
   ctx->frame++;
+  ctx->crc = 0;
 }
 
 
@@ -425,6 +426,12 @@ void mu_input_text(mu_Context *ctx, const char *text) {
 /*============================================================================
 ** commandlist
 **============================================================================*/
+static void roll_crc(mu_Context *ctx, mu_Command* cmd, int size) {
+  mu_Id cmdhash = 0;
+  hash(&cmdhash, cmd, size);
+  ctx->crc ^= cmdhash;
+}
+
 
 mu_Command* mu_push_command(mu_Context *ctx, int type, int size) {
   mu_Command *cmd = (mu_Command*) (ctx->command_list.items + ctx->command_list.idx);
@@ -432,6 +439,7 @@ mu_Command* mu_push_command(mu_Context *ctx, int type, int size) {
   cmd->base.type = type;
   cmd->base.size = size;
   ctx->command_list.idx += size;
+  roll_crc(ctx, cmd, size);
   return cmd;
 }
 
