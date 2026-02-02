@@ -67,6 +67,8 @@ static mu_Style default_style = {
     { 30,  30,  30,  255 }, /* MU_COLOR_BASE */
     { 35,  35,  35,  255 }, /* MU_COLOR_BASEHOVER */
     { 40,  40,  40,  255 }, /* MU_COLOR_BASEFOCUS */
+    { 43,  43,  43,  255 }, /* MU_COLOR_PROGRESSBASE */
+    { 80,  80,  80,  255 }, /* MU_COLOR_PROGRESSTHUMB */
     { 43,  43,  43,  255 }, /* MU_COLOR_SCROLLBASE */
     { 30,  30,  30,  255 }  /* MU_COLOR_SCROLLTHUMB */
   }
@@ -880,6 +882,24 @@ int mu_textbox_ex(mu_Context *ctx, char *buf, int bufsz, int *index, int opt) {
   return mu_textbox_raw(ctx, buf, bufsz, index, id, r, opt);
 }
 
+void mu_progressbar_ex(mu_Context *ctx, mu_Real percentage, const char *fmt, int opt)
+{
+    //draw background bar
+  mu_Rect base = mu_layout_next(ctx);
+  ctx->draw_frame(ctx, base, MU_COLOR_PROGRESSBASE);
+
+  // draw progress overlay (thumb?)
+  // make sure the value is less than 1.1
+  percentage = mu_clamp(percentage, 0.0, 1.0);
+  mu_Rect progress = base;
+  progress.w *= percentage;
+  ctx->draw_frame(ctx, progress, MU_COLOR_PROGRESSTHUMB);
+
+  //draw text
+  char buf[MU_MAX_FMT + 1];
+  sprintf(buf, fmt, percentage*100);
+  mu_draw_control_text(ctx, buf, base, MU_COLOR_TEXT, opt);
+}
 
 int mu_slider_ex(mu_Context *ctx, mu_Real *value, int *index, mu_Real low, mu_Real high,
   mu_Real step, const char *fmt, int opt)

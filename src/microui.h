@@ -56,6 +56,8 @@ enum {
   MU_COLOR_BASE,
   MU_COLOR_BASEHOVER,
   MU_COLOR_BASEFOCUS,
+  MU_COLOR_PROGRESSBASE,
+  MU_COLOR_PROGRESSTHUMB,
   MU_COLOR_SCROLLBASE,
   MU_COLOR_SCROLLTHUMB,
   MU_COLOR_MAX
@@ -272,6 +274,7 @@ void mu_update_control(mu_Context *ctx, mu_Id id, mu_Rect rect, int opt);
 #define mu_button(ctx, label)                mu_button_ex(ctx, label, 0, MU_OPT_ALIGNCENTER)
 #define mu_textbox(ctx, buf, bufsz, index)   mu_textbox_ex(ctx, buf, bufsz, index, 0)
 #define mu_slider(ctx, value, index, lo, hi) mu_slider_ex(ctx, value, index, lo, hi, 0, MU_SLIDER_FMT, MU_OPT_ALIGNCENTER)
+#define mu_progressbar(ctx, percentage)           mu_progressbar_ex(ctx, percentage, MU_SLIDER_FMT , MU_OPT_ALIGNCENTER)
 #define mu_number(ctx, value, index, step)   mu_number_ex(ctx, value, index, step, MU_SLIDER_FMT, MU_OPT_ALIGNCENTER)
 #define mu_header(ctx, label)                mu_header_ex(ctx, label, 0)
 #define mu_begin_treenode(ctx, label)        mu_begin_treenode_ex(ctx, label, 0)
@@ -285,6 +288,7 @@ int mu_checkbox(mu_Context *ctx, const char *label, int *state);
 int mu_textbox_raw(mu_Context *ctx, char *buf, int bufsz, int *index, mu_Id id, mu_Rect r, int opt);
 int mu_textbox_ex(mu_Context *ctx, char *buf, int bufsz, int *index, int opt);
 int mu_slider_ex(mu_Context *ctx, mu_Real *value, int *index, mu_Real low, mu_Real high, mu_Real step, const char *fmt, int opt);
+void mu_progressbar_ex(mu_Context *ctx, mu_Real percentage, const char *fmt, int opt);
 int mu_number_ex(mu_Context *ctx, mu_Real *value, int *index, mu_Real step, const char *fmt, int opt);
 int mu_header_ex(mu_Context *ctx, const char *label, int opt);
 int mu_begin_treenode_ex(mu_Context *ctx, const char *label, int opt);

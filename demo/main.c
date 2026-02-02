@@ -11,6 +11,7 @@ static   int logbuf_updated = 0;
 static float bg[3] = { 90, 95, 100 };
 unsigned long long fps_diff = 16666667;
 int fps_lock = 0;
+static mu_Real progress_tick = 0.0;
 
 
 static void write_log(const char *text) {
@@ -33,6 +34,7 @@ static void test_window(mu_Context *ctx) {
     sprintf(fps_s,"FPS: %.0f", fps_lp);
     mu_label(ctx,fps_s);
     mu_checkbox(ctx, "lock", &fps_lock);
+    mu_progressbar(ctx, progress_tick);
     /* window info */
     if (mu_header(ctx, "Window Info")) {
       mu_Container *win = mu_get_current_container(ctx);
@@ -313,6 +315,14 @@ int main(int argc, char **argv) {
     struct timespec t_end;
     timespec_get(&t_end, TIME_UTC);
     fps_diff = t_end.tv_nsec - t_start.tv_nsec;
+    static unsigned long long time_accum = 0;
+    time_accum += fps_diff;
+    if(time_accum > 100000000)
+    {
+        time_accum = 0;
+        progress_tick = (progress_tick > 0.99) ? 0 : progress_tick + 0.01;
+    }
+
     if(fps_lock)
     {
         t_end.tv_nsec = 16666667 - fps_diff; //lock to 60 fps
