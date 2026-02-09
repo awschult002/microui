@@ -213,6 +213,7 @@ struct mu_Context {
   int key_pressed;
   char input_text[32];
   int  input_text_written;
+  int crc;
 };
 
 
