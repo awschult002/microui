@@ -1156,9 +1156,10 @@ int mu_begin_window_ex(mu_Context *ctx, const char *title, mu_Rect rect, int opt
 
   /* do `resize` handle */
   if (~opt & MU_OPT_NORESIZE) {
-    int sz = ctx->style->title_height;
+    int sz = ctx->style->title_height*0.30;
     mu_Id id = mu_get_id(ctx, "!resize", 7);
     mu_Rect r = mu_rect(rect.x + rect.w - sz, rect.y + rect.h - sz, sz, sz);
+    mu_draw_rect(ctx, r, ctx->style->colors[MU_COLOR_TITLEBG]);
     mu_update_control(ctx, id, r, opt);
     if (id == ctx->focus && ctx->mouse_down == MU_MOUSE_LEFT) {
       cnt->rect.w = mu_max(96, cnt->rect.w + ctx->mouse_delta.x);
