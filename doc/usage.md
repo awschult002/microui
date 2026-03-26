@@ -116,6 +116,20 @@ while (mu_next_command(ctx, &cmd)) {
 See the [`demo`](../demo) directory for a usage example.
 
 
+## When to render
+The developer determines when it is time to render/draw the commands to the
+actual framebuffer. This can be done on every loop iteration, which is typical
+for fast response applications such as video games. However, for simple point
+and click UIs; drawing only when a change occured can be much more efficient. As
+such, microUI keeps a running checksum (crc) of the context command list. With
+every `mu_begin` the crc is cleared, and with every `mu_push_command()` a simple
+hash is rolled into `ctx->crc`. This provides a deterministic number for each
+draw list. If you want to know if something new in the draw list has occured,
+you can simply store the previous crc in your application and check that against
+the `ctx->crc`. 
+
+See the [`demo`](../demo) directory for a usage example.
+
 ## Layout System
 The layout system is primarily based around *rows* — Each row
 can contain a number of *items* or *columns* each column can itself

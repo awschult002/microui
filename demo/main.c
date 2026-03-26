@@ -247,6 +247,7 @@ int main(int argc, char **argv) {
   mu_init(ctx);
   ctx->text_width = text_width;
   ctx->text_height = text_height;
+  int old_crc = 0;
 
   /* main loop */
   for (;;) {
@@ -280,18 +281,22 @@ int main(int argc, char **argv) {
     /* process frame */
     process_frame(ctx);
 
-    /* render */
-    r_clear(mu_color(bg[0], bg[1], bg[2], 255));
-    mu_Command *cmd = NULL;
-    while (mu_next_command(ctx, &cmd)) {
-      switch (cmd->type) {
-        case MU_COMMAND_TEXT: r_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color); break;
-        case MU_COMMAND_RECT: r_draw_rect(cmd->rect.rect, cmd->rect.color); break;
-        case MU_COMMAND_ICON: r_draw_icon(cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
-        case MU_COMMAND_CLIP: r_set_clip_rect(cmd->clip.rect); break;
+    if(old_crc != ctx->crc) {
+      old_crc = ctx->crc;
+
+      /* render */
+      r_clear(mu_color(bg[0], bg[1], bg[2], 255));
+      mu_Command *cmd = NULL;
+      while (mu_next_command(ctx, &cmd)) {
+        switch (cmd->type) {
+          case MU_COMMAND_TEXT: r_draw_text(cmd->text.str, cmd->text.pos, cmd->text.color); break;
+          case MU_COMMAND_RECT: r_draw_rect(cmd->rect.rect, cmd->rect.color); break;
+          case MU_COMMAND_ICON: r_draw_icon(cmd->icon.id, cmd->icon.rect, cmd->icon.color); break;
+          case MU_COMMAND_CLIP: r_set_clip_rect(cmd->clip.rect); break;
+        }
       }
+      r_present();
     }
-    r_present();
   }
 
   return 0;
