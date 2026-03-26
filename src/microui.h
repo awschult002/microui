@@ -128,7 +128,6 @@ typedef struct { mu_BaseCommand base; mu_Font font; mu_Vec2 pos; mu_Color color;
 typedef struct { mu_BaseCommand base; mu_Rect rect; int id; mu_Color color; } mu_IconCommand;
 
 typedef union {
-  int type;
   mu_BaseCommand base;
   mu_JumpCommand jump;
   mu_ClipCommand clip;
